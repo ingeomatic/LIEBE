@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geoportal</title>
+    
+    <!-- Mapbox GL JS CSS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <!-- Mapbox GL Draw CSS (para herramienta de medición) -->
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.0/mapbox-gl-draw.css">
+    <!-- Mapbox GL Geocoder CSS (para el buscador) -->
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css">
+    
+    <!-- Font Awesome para iconos modernos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Archivo CSS personalizado -->
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <!-- Header principal del geoportal -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo-section">
+            <img src="logo.png" alt="Logo" class="logo-image">
+            <h1 class="logo-text"> <span class="logo-highlight"></span>SERVICIOS MOBILIARIOS</h1>
+            </div>
+            <div class="header-geocoder">
+                <div id="geocoder-container"></div>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" id="info-btn" title="Información">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+                <button class="header-btn" id="export-excel-btn" title="Exportar a Excel">
+                    <i class="fas fa-file-excel"></i>
+                </button>
+                <button class="header-btn" id="user-btn" title="Usuario">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenedor principal del mapa -->
+    <div id="map"></div>
+    
+    <!-- Panel lateral de control de capas (colapsable) - INICIA CERRADO, SE ABRE DESDE IZQUIERDA -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-layer-group"></i> Control de Capas</h2>
+            <button class="close-btn" id="close-sidebar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- Sección de Urbanizaciones -->
+            <div class="layer-section">
+                <div class="section-header">
+                    <i class="fas fa-city"></i>
+                    <h3>Urbanizaciones</h3>
+                </div>
+                <div id="urb-layers" class="layer-list"></div>
+            </div>
+            
+            <!-- Separador visual -->
+            <div class="section-divider"></div>
+            
+            <!-- Sección de Capas Adicionales (Rutas, Centros y Fotos) -->
+            <div class="layer-section">
+                <div class="section-header">
+                    <i class="fas fa-map-signs"></i>
+                    <h3>Capas Adicionales</h3>
+                </div>
+                <div id="additional-layers" class="layer-list">
+                    <!-- Capa de Rutas -->
+                    <div class="layer-item">
+                        <input type="checkbox" id="layer-rutas">
+                        <label for="layer-rutas">Rutas</label>
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <!-- Capa de Centros -->
+                    <div class="layer-item">
+                        <input type="checkbox" id="layer-centros">
+                        <label for="layer-centros">Centros</label>
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <!-- ✨ NUEVA: Capa de Fotos -->
+                    <div class="layer-item">
+                        <input type="checkbox" id="layer-fotos">
+                        <label for="layer-fotos">Fotos</label>
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Separador visual -->
+            <div class="section-divider"></div>
+            
+            <!-- Sección de Capas Base -->
+            <div class="layer-section">
+                <div class="section-header">
+                    <i class="fas fa-map"></i>
+                    <h3>Capas Base</h3>
+                </div>
+                <div id="base-layers" class="layer-list"></div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Panel lateral de leyenda (HORIZONTAL EN LA PARTE INFERIOR) -->
+    <aside class="sidebar-legend" id="sidebar-legend">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-palette"></i> ESTADO DE LOTES</h2>
+        </div>
+        
+        <div class="sidebar-content">
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #3ac91d;"></span>
+                    <span>DISPONIBLE</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #ffd900;"></span>
+                    <span>RESERVADO</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: #ff0000;"></span>
+                    <span>VENDIDO</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Botón flotante para abrir/cerrar panel de capas - LADO IZQUIERDO ARRIBA -->
+    <button class="fab fab-layers" id="toggle-sidebar" title="Control de Capas">
+        <i class="fas fa-layer-group"></i>
+    </button>
+    
+    <!-- Contenedor para mostrar mediciones -->
+    <div id="measure-container" class="measure-panel">
+        <div class="measure-header">
+            <i class="fas fa-ruler"></i>
+            <span>Medición</span>
+        </div>
+        <div id="measure-result"></div>
+    </div>
+
+    <!-- ✨ Modal de Login/Usuario -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-circle"></i> <span id="modal-title">Iniciar Sesión</span></h2>
+                <button class="modal-close" id="close-user-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario de Login -->
+                <div id="login-form-container">
+                    <form id="login-form" class="login-form">
+                        <div class="error-message" id="login-error"></div>
+                        
+                        <div class="form-group">
+                            <label for="username">
+                                <i class="fas fa-user"></i> Usuario
+                            </label>
+                            <input type="text" id="username" placeholder="Ingrese su usuario" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">
+                                <i class="fas fa-lock"></i> Contraseña
+                            </label>
+                            <input type="password" id="password" placeholder="Ingrese su contraseña" required>
+                        </div>
+
+                        <button type="submit" class="login-btn">
+                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Información de usuario logueado -->
+                <div id="user-info-container" style="display: none;">
+                    <div class="user-info">
+                        <p>Sesión activa</p>
+                        <p class="username" id="logged-username"></p>
+                    </div>
+                    <p style="color: var(--text-medium); font-size: 13px; margin-bottom: 15px;" id="user-access-message">
+    <i class="fas fa-check-circle" style="color: var(--success-color);"></i>
+    <span id="access-level-text">Tienes acceso completo a todas las funcionalidades del sistema.</span>
+</p>
+                    <button class="logout-btn" id="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de información -->
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-info-circle"></i> Información del sistema</h2>
+                <button class="modal-close" id="close-info-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Sistema de administración profesional - LIEBE SERVICIOS MOBILIARIOS </strong></p>
+                <p>Transformamos la tierra en el espacio ideal para tus proyectos. Ofrecemos lotes completamente urbanizados, 
+                    listos para construir el hogar o la inversión que siempre soñaste.</p>
+                <ul>
+                    <li><i class="fas fa-check"></i> Especialistas en Urbanizacion</li>
+                    <li><i class="fas fa-check"></i> Especialistas en Ventas</li>
+    
+                </ul>
+                <p style="margin-top: 15px; padding: 10px; background: #f1f5f9; border-radius: 8px; font-size: 12px;">
+                    <strong>🧩:</strong> Disarrollado e implementado por ©2026.INGEOMATIC.TECH. Todos los derechos reservados.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📄 Modal para formulario de reporte -->
+    <div id="reporte-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-pdf"></i> Generar Reporte de Lote</h2>
+                <button class="modal-close" id="close-reporte-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="reporte-form">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-tag"></i> Lote N°
+                        </label>
+                        <input type="text" id="form-lote" readonly style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-weight: 600;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-th"></i> Manzano N°
+                        </label>
+                        <input type="text" id="form-manzano" readonly style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-weight: 600;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-ruler-combined"></i> Superficie (m²)
+                        </label>
+                        <input type="text" id="form-Supm2" readonly style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f8fafc; font-weight: 600;">
+                    </div>
+
+                    <div style="border-top: 2px solid #e2e8f0; margin: 20px 0; padding-top: 15px;">
+                        <h3 style="color: var(--primary-color); font-size: 16px; margin-bottom: 15px;">
+                            <i class="fas fa-hand-holding-usd"></i> Precio al Contado
+                        </h3>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                                <i class="fas fa-dollar-sign"></i> Precio Total (Dolares $)
+                            </label>
+                            <input type="number" id="form-precio-contado" placeholder="Ej: 150000" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        </div>
+                    </div>
+
+                    <div style="border-top: 2px solid #e2e8f0; margin: 20px 0; padding-top: 15px;">
+                        <h3 style="color: var(--primary-color); font-size: 16px; margin-bottom: 15px;">
+                            <i class="fas fa-credit-card"></i> Precio a Crédito
+                        </h3>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                                <i class="fas fa-dollar-sign"></i> Precio Total (Dolares $)
+                            </label>
+                            <input type="number" id="form-precio" placeholder="Ej: 180000" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-money-bill-wave"></i> Cuota Inicial (Bs)
+                        </label>
+                        <input type="number" id="form-cuota-inicial" placeholder="Ej: 30000" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                                <i class="fas fa-calendar-alt"></i> Plazo (años)
+                            </label>
+                            <input type="number" id="form-plazo-anos" placeholder="Ej: 5" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                                <i class="fas fa-coins"></i> Cuota Mensual (Bs)
+                            </label>
+                            <input type="number" id="form-cuota-mensual" placeholder="Ej: 2500" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        </div>
+                    </div>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-wrench"></i> Servicios Disponibles
+                        </label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" value="Agua Potable" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span style="font-size: 14px;">💧 Agua Potable</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" value="Luz Eléctrica" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span style="font-size: 14px;">⚡ Luz Eléctrica</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" value="Alcantarillado" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span style="font-size: 14px;">🚰 Alcantarillado</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" value="Transporte Público" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span style="font-size: 14px;">🚌 Transporte Público</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-comment-dots"></i> Observaciones
+                        </label>
+                        <textarea id="form-observaciones" rows="3" placeholder="Información adicional sobre el lote..." style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; resize: vertical; font-family: inherit;"></textarea>
+                    </div>
+
+                    <button type="submit" class="popup-btn" style="margin-top: 0;">
+                        <i class="fas fa-file-pdf"></i> Generar Cotizacion (PDF)
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para datos de venta -->
+    <div id="venta-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-edit"></i> Datos de Venta</h2>
+                <button class="modal-close" id="close-venta-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="venta-form">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-user"></i> Nombre del Cliente *
+                        </label>
+                        <input type="text" id="venta-cliente" required placeholder="Ingrese nombre completo" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-phone"></i> Celular del Cliente *
+                        </label>
+                        <input type="tel" id="venta-celular" required placeholder="Ej: 75211489" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-dollar-sign"></i> Precio de Venta ($us) *
+                        </label>
+                        <input type="number" id="venta-precio" required placeholder="Ej: 150000" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-handshake"></i> Tipo de Venta *
+                        </label>
+                        <select id="venta-tipo" required style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: white;">
+                            <option value="">Seleccione...</option>
+                            <option value="CONTADO">CONTADO</option>
+                            <option value="CREDITO">CRÉDITO</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-user-tie"></i> Vendedor *
+                        </label>
+                        <input type="text" id="venta-vendedor" required placeholder="Nombre del vendedor" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 0;">
+                        <button type="submit" class="popup-btn" style="margin: 0; background: var(--primary-color);">
+                            <i class="fas fa-save"></i> Registrar Venta
+                        </button>
+                        <button type="button" id="omitir-registro-btn" class="popup-btn" style="margin: 0; background: #64748b;">
+                            <i class="fas fa-forward"></i> Omitir Registro
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para exportar a Excel -->
+    <div id="excel-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-excel"></i> Exportar a Excel</h2>
+                <button class="modal-close" id="close-excel-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px; color: var(--text-dark);">Seleccione la urbanización para exportar:</p>
+                <div id="urb-list-excel" style="max-height: 300px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts externos -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.0/mapbox-gl-draw.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+    
+    <!-- 📄 Librerías para PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Librería para exportar a Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <!-- Script personalizado -->
+    <script src="map.js"></script>
+</body>
+</html>
