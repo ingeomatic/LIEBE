@@ -11,12 +11,11 @@
     --success-color: #bfff00;
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
-    
     /* COLORES DE FONDO Y TEXTO */
     --bg-dark: #1b52aa;
     --bg-medium: #334155;
     --bg-light: #82da16;
-    --text-light: #f1f5f9;
+    --text-light: #ffffff;
     --text-medium: #cbd5e1;
     --text-dark: #334155;
     
@@ -63,7 +62,7 @@ body {
     left: 0;
     right: 0;
     height: var(--header-height);
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 110%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
     box-shadow: var(--shadow-lg);
     z-index: 1000;
 }
@@ -212,6 +211,7 @@ body {
     left: 0;
     width: var(--sidebar-width);
     height: calc(100vh - var(--header-height));
+    height: calc(100dvh - var(--header-height)); /* dvh = viewport real en móvil */
     background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     box-shadow: var(--shadow-xl);
     transform: translateX(-100%);
@@ -220,6 +220,7 @@ body {
     display: flex;
     flex-direction: column;
     border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0;
+    overflow: hidden;
 }
 
 /* Estado visible del sidebar */
@@ -346,7 +347,10 @@ body {
 .sidebar-content {
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* scroll suave en iOS Safari */
+    overscroll-behavior: contain;      /* evita scroll de fondo al llegar al límite */
     padding: 14px;
+    min-height: 0;
 }
 
 /* Scrollbar personalizado */
@@ -1114,7 +1118,13 @@ body {
         max-width: 250px;
     }
     
-    .sidebar,
+.sidebar {
+        width: 75%;
+        max-width: 320px;
+        height: calc(100vh - var(--header-height));
+        height: calc(100dvh - var(--header-height));
+    }
+
     .sidebar-legend {
         width: 75%;
         max-width: 320px;
@@ -1208,7 +1218,7 @@ body {
     }
     
     .logo-text {
-        font-size: 14px;
+        font-size: 0px;
     }
     
     .header-geocoder {
@@ -1221,11 +1231,22 @@ body {
         font-size: 14px;
     }
     
-    .sidebar,
+.sidebar {
+        width: 85%;
+        max-width: 320px;
+        height: calc(100vh - var(--header-height));
+        height: calc(100dvh - var(--header-height));
+    }
+
     .sidebar-legend {
         width: 85%;
         max-width: 100%;
     }
+
+    .sidebar-header {
+        flex-shrink: 0;
+    }
+
     
     .sidebar-legend {
         flex-direction: row;
