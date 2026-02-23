@@ -24,7 +24,7 @@
         <div class="header-content">
             <div class="logo-section">
             <img src="logo.png" alt="Logo" class="logo-image">
-            <h1 class="logo-text"> <span class="logo-highlight"></span>SERVICIOS MOBILIARIOS</h1>
+            <h1 class="logo-text"> <span class="logo-highlight"></span>SERVICIOS INMOBILIARIOS</h1>
             </div>
             <div class="header-geocoder">
                 <div id="geocoder-container"></div>
@@ -35,6 +35,9 @@
                 </button>
                 <button class="header-btn" id="export-excel-btn" title="Exportar a Excel">
                     <i class="fas fa-file-excel"></i>
+                </button>
+                <button class="header-btn" id="cobros-btn" title="Módulo de Cobros">
+                    <i class="fas fa-money-bill-wave"></i>
                 </button>
                 <button class="header-btn" id="user-btn" title="Usuario">
                     <i class="fas fa-user-circle"></i>
@@ -211,7 +214,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p><strong>Sistema de administración profesional - LIEBE SERVICIOS MOBILIARIOS </strong></p>
+                <p><strong>Sistema de administración profesional - LIEBE URBANICACIONES </strong></p>
                 <p>Transformamos la tierra en el espacio ideal para tus proyectos. Ofrecemos lotes completamente urbanizados, 
                     listos para construir el hogar o la inversión que siempre soñaste.</p>
                 <ul>
@@ -370,11 +373,19 @@
                         <input type="tel" id="venta-celular" required placeholder="Ej: 75211489" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
                     </div>
 
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
-                            <i class="fas fa-dollar-sign"></i> Precio de Venta ($us) *
-                        </label>
-                        <input type="number" id="venta-precio" required placeholder="Ej: 150000" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                                <i class="fas fa-dollar-sign"></i> Precio de Venta ($us) *
+                            </label>
+                            <input type="number" id="venta-precio" required placeholder="Ej: 150000" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                                <i class="fas fa-coins"></i> Monto en Bolivianos (Bs)
+                            </label>
+                            <input type="number" id="venta-monto-bs" placeholder="Ej: 1050000" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        </div>
                     </div>
 
                     <div style="margin-bottom: 15px;">
@@ -403,6 +414,132 @@
                             <i class="fas fa-forward"></i> Omitir Registro
                         </button>
                     </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para módulo de cobros -->
+    <div id="cobros-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-money-bill-wave"></i> Módulo de Cobros</h2>
+                <button class="modal-close" id="close-cobros-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                    <!-- Panel izquierdo: Selector de lote -->
+                    <div>
+                        <h3 style="margin-bottom: 15px; color: var(--primary-color);">
+                            <i class="fas fa-map-marked-alt"></i> Seleccionar Lote
+                        </h3>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Urbanización</label>
+                            <select id="cobros-urb-select" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Lote</label>
+                            <div style="position: relative; margin-bottom: 5px;">
+                                <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none;"></i>
+                                <input type="text" id="cobros-lote-buscar" placeholder="Buscar por manzano, lote o cliente..." style="width: 100%; padding: 10px 10px 10px 35px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;" disabled>
+                            </div>
+                            <select id="cobros-lote-select" size="8" style="width: 100%; padding: 8px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 13px;" disabled>
+                                <option value="">Seleccione urbanización primero...</option>
+                            </select>
+                        </div>
+                        
+                        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                            <button type="button" id="seleccionar-desde-mapa-btn" class="popup-btn" style="flex: 1; margin: 0; padding: 8px; font-size: 13px; background: #0891b2;" disabled>
+                                <i class="fas fa-map-marker-alt"></i> Seleccionar desde Mapa
+                            </button>
+                            <button type="button" id="cancelar-seleccion-mapa-btn" class="popup-btn" style="display: none; flex: 1; margin: 0; padding: 8px; font-size: 13px; background: #ef4444;">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        </div>
+                        
+                        <!-- Información del lote seleccionado -->
+                        <div id="cobros-lote-info" style="display: none; padding: 15px; background: #f8fafc; border-radius: 8px; margin-bottom: 15px;">
+                            <h4 style="margin-bottom: 10px; color: var(--primary-color);">Información del Lote</h4>
+                            <p style="margin: 5px 0;"><strong>Cliente:</strong> <span id="info-cliente">-</span></p>
+                            <p style="margin: 5px 0;"><strong>Precio Total:</strong> <span id="info-precio">-</span></p>
+                            <p style="margin: 5px 0;"><strong>Total Cobrado:</strong> <span id="info-total-cobrado">Bs 0</span></p>
+                            <p style="margin: 5px 0;"><strong>Saldo Pendiente:</strong> <span id="info-saldo">-</span></p>
+                        </div>
+                        
+                        <button id="registrar-cobro-btn" class="popup-btn" style="width: 100%;" disabled>
+                            <i class="fas fa-cash-register"></i> Registrar Cobro
+                        </button>
+                    </div>
+                    
+                    <!-- Panel derecho: Historial de cobros -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="color: var(--primary-color);">
+                                <i class="fas fa-history"></i> Historial de Cobros
+                            </h3>
+                            <button id="imprimir-cobros-btn" onclick="imprimirCobrosPDF()" class="popup-btn" 
+                                style="margin: 0; padding: 8px 14px; font-size: 13px; background: #dc2626; display: none;">
+                                <i class="fas fa-file-pdf"></i> Imprimir PDF
+                            </button>
+                        </div>
+                        <div id="cobros-historial" style="max-height: 400px; overflow-y: auto;">
+                            <p style="text-align: center; color: #64748b; padding: 40px;">
+                                Seleccione un lote para ver su historial de cobros
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para registrar nuevo cobro -->
+    <div id="nuevo-cobro-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2><i class="fas fa-cash-register"></i> Registrar Nuevo Cobro</h2>
+                <button class="modal-close" id="close-nuevo-cobro-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="nuevo-cobro-form">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-money-bill"></i> Monto (Bs) *
+                        </label>
+                        <input type="number" id="nuevo-cobro-monto" required placeholder="Ej: 5000" step="0.01" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-calendar-alt"></i> Fecha de Cobro *
+                        </label>
+                        <input type="date" id="nuevo-cobro-fecha" required style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-receipt"></i> Número de Factura
+                        </label>
+                        <input type="text" id="nuevo-cobro-factura" placeholder="Ej: FAC-001234" style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--primary-color);">
+                            <i class="fas fa-list-ol"></i> Número de Cuota *
+                        </label>
+                        <input type="number" id="nuevo-cobro-cuota" required readonly style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; background: #f1f5f9;">
+                        <small style="color: #64748b; font-size: 12px;">El número de cuota se asigna automáticamente</small>
+                    </div>
+
+                    <button type="submit" class="popup-btn" style="width: 100%; margin: 0;">
+                        <i class="fas fa-save"></i> Guardar Cobro
+                    </button>
                 </form>
             </div>
         </div>
